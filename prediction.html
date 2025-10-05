@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churn Prediction - ISP Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1a202c;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .prediction-card {
+            background: white;
+            border-radius: 25px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #667eea;
+            display: inline-block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.9rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input:hover,
+        .form-group select:hover {
+            border-color: #cbd5e0;
+        }
+
+        .predict-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.25rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .predict-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .predict-button:active {
+            transform: translateY(-1px);
+        }
+
+        .result-box {
+            margin-top: 2rem;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-box.high-risk {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(245, 101, 101, 0.3);
+        }
+
+        .result-box.low-risk {
+            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(72, 187, 120, 0.3);
+        }
+
+        .result-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-text {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-probability {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 1rem 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            transform: translateX(-5px);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #2d3748;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .prediction-card {
+                padding: 2rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+          /* Tablet responsiveness */
+          @media (max-width: 1024px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .prediction-card {
+                padding: 2.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header {
+                margin-bottom: 2rem;
+            }
+
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .prediction-card {
+                padding: 1.5rem;
+                border-radius: 20px;
+            }
+
+            .section-title {
+                font-size: 1.2rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .form-group label {
+                font-size: 0.85rem;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 0.75rem;
+                font-size: 0.95rem;
+            }
+
+            .predict-button {
+                padding: 1rem;
+                font-size: 1.1rem;
+            }
+
+            .result-box {
+                padding: 1.5rem;
+            }
+
+            .result-icon {
+                font-size: 2.5rem;
+            }
+
+            .result-text {
+                font-size: 1.1rem;
+            }
+
+            .result-probability {
+                font-size: 2rem;
+            }
+
+            .tooltip .tooltiptext {
+                width: 180px;
+                margin-left: -90px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+            body {
+                padding: 0.75rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .prediction-card {
+                padding: 1.25rem;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+            }
+
+            .form-section {
+                margin-bottom: 2rem;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 0.7rem;
+                font-size: 0.9rem;
+            }
+
+            .predict-button {
+                padding: 0.9rem;
+                font-size: 1rem;
+            }
+
+            .result-icon {
+                font-size: 2rem;
+            }
+
+            .result-text {
+                font-size: 1rem;
+            }
+
+            .result-probability {
+                font-size: 1.75rem;
+            }
+
+            .back-link {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Large screens */
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1100px;
+            }
+
+            .form-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Customer Churn Prediction</h1>
+            <p>Enter customer details to predict churn probability using our ML model</p>
+        </div>
+
+        <div class="prediction-card">
+            <form id="predictionForm">
+                <!-- Numeric Inputs Section -->
+                <div class="form-section">
+                    <div class="section-title">📊 Customer Metrics</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>
+                                💰 Points in Wallet
+                                <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Loyalty points currently in customer's wallet</span>
+                                </span>
+                            </label>
+                            <input type="number" id="points_in_wallet" min="0" step="0.1" value="50" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                💳 Avg Transaction Value
+                                <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Average value of customer transactions</span>
+                                </span>
+                            </label>
+                            <input type="number" id="avg_transaction_value" min="0" step="0.1" value="100" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                📅 Tenure (days)
+                                <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Number of days as a customer</span>
+                                </span>
+                            </label>
+                            <input type="number" id="tenure_days" min="0" value="365" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                ⏱️ Avg Time Spent (mins)
+                                <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Average session duration in minutes</span>
+                                </span>
+                            </label>
+                            <input type="number" id="avg_time_spent" min="0" step="0.1" value="10" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                🔐 Login Frequency (days)
+                                <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Average days between logins</span>
+                                </span>
+                            </label>
+                            <input type="number" id="avg_frequency_login_days" min="0" step="0.1" value="5" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Membership Section -->
+                <div class="form-section">
+                    <div class="section-title">🎭 Membership & Preferences</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Membership Category</label>
+                            <select id="membership" required>
+                                <option value="No_Membership">No Membership</option>
+                                <option value="Gold_Membership">Gold Membership</option>
+                                <option value="Platinum_Membership">Platinum Membership</option>
+                                <option value="Premium_Membership">Premium Membership</option>
+                                <option value="Silver_Membership">Silver Membership</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Medium of Operation</label>
+                            <select id="medium" required>
+                                <option value="Desktop">Desktop</option>
+                                <option value="Smartphone">Smartphone</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preferred Offer Type</label>
+                            <select id="offer_type" required>
+                                <option value="Gift_Vouchers/Coupons">Gift Vouchers/Coupons</option>
+                                <option value="Without_Offers">Without Offers</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback & Status Section -->
+                <div class="form-section">
+                    <div class="section-title">💬 Feedback & Status</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Customer Feedback</label>
+                            <select id="feedback" required>
+                                <option value="Poor_Customer_Service">Poor Customer Service</option>
+                                <option value="Poor_Product_Quality">Poor Product Quality</option>
+                                <option value="Poor_Website">Poor Website</option>
+                                <option value="Products_always_in_Stock">Products Always in Stock</option>
+                                <option value="Quality_Customer_Care">Quality Customer Care</option>
+                                <option value="Reasonable_Price">Reasonable Price</option>
+                                <option value="Too_many_ads">Too Many Ads</option>
+                                <option value="User_Friendly_Website">User Friendly Website</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Complaint Status</label>
+                            <select id="complaint_status" required>
+                                <option value="Not_Applicable">Not Applicable</option>
+                                <option value="Solved_in_Follow-up">Solved in Follow-up</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yes/No Section -->
+                <div class="form-section">
+                    <div class="section-title">✅ Additional Information</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Offer Application Preference?</label>
+                            <select id="offer_preference" required>
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Joined Through Referral?</label>
+                            <select id="referral" required>
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Used Special Discount?</label>
+                            <select id="used_discount" required>
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="predict-button">
+                    🔮 Predict Churn Probability
+                </button>
+            </form>
+
+            <div id="resultBox" class="result-box">
+                <div class="result-icon" id="resultIcon"></div>
+                <div class="result-text" id="resultText"></div>
+                <div class="result-probability" id="resultProbability"></div>
+            </div>
+        </div>
+
+        <a href="index.html" class="back-link">← Back to Home</a>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simulate prediction (replace with actual API call)
+            const probability = Math.random();
+            const isChurn = probability > 0.5;
+            
+            const resultBox = document.getElementById('resultBox');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultText = document.getElementById('resultText');
+            const resultProbability = document.getElementById('resultProbability');
+            
+            // Update result display
+            if (isChurn) {
+                resultBox.className = 'result-box high-risk';
+                resultIcon.textContent = '⚠️';
+                resultText.textContent = 'High Churn Risk Detected';
+                resultProbability.textContent = (probability * 100).toFixed(1) + '%';
+            } else {
+                resultBox.className = 'result-box low-risk';
+                resultIcon.textContent = '✅';
+                resultText.textContent = 'Low Churn Risk';
+                resultProbability.textContent = (probability * 100).toFixed(1) + '%';
+            }
+            
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    </script>
+</body>
+</html>
